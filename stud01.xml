@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="Windows-1251"?>
+<!DOCTYPE group SYSTEM "group.dtd">
+<group>
+	<student firstname="StFM1" lastname="StLM1" groupnumber="1">
+		<subject title="subject1" mark="3"/>
+		<subject title="subject2" mark="4"/>
+		<subject title="subject3" mark="1"/>
+		<average>5</average>
+	</student>
+	<student firstname="StFM2" lastname="StLM2" groupnumber="1">
+		<subject title="subject1" mark="3"/>
+		<subject title="subject2" mark="3"/>
+		<subject title="subject3" mark="3"/>
+		<average>4</average>
+	</student>
+	<student firstname="StFM3" lastname="StLM3" groupnumber="1">
+		<subject title="subject1" mark="4"/>
+		<subject title="subject2" mark="5"/>
+		<subject title="subject3" mark="4"/>
+		<average>4</average>
+	</student>
+</group>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="Windows-1251"?>
+<group>
+	<student firstname="St_FM1" lastname="St_LM1" groupnumber="1">
+		<subject title="subject1" mark="3"/>
+		<subject title="subject2" mark="3"/>
+		<subject title="subject3" mark="5"/>
+		<average>5</average>
+	</student>
+</group>
+		<!--<!DOCTYPE group SYSTEM "group.dtd">-->
