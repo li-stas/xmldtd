@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="Windows-1251"?>
+		<!DOCTYPE group SYSTEM "group.dtd">
 <group>
 	<student firstname="St_FM1" lastname="St_LM1" groupnumber="1">
 		<subject title="subject1" mark="3"/>
