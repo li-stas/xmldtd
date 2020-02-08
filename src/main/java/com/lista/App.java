@@ -4,34 +4,34 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
+import org.xml.sax.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * Hello world!
  * https://vike.io/ru/557148/ - Как проверить XML с Dtd с помощью Java?
  */
 public class App {
-    public static void main(String[] args)  {
+    public static void main(String[] args) {
         String cFileDtd = "group.dtd";
         String cFileSourece;
         String cFileTarget;
+
         if (args.length < 2) {
             cFileSourece = "stud.xml";
             cFileTarget = "nestud.xml";
@@ -40,7 +40,11 @@ public class App {
             cFileTarget = args[1];
         }
         //делать проверку на соответвие
-        Document doc = getXmlDoc(cFileSourece);
+        if (!(Files.exists(Paths.get(cFileDtd)))) {
+            cFileDtd = "";
+        }
+
+        Document doc = getXmlDoc(cFileSourece, cFileDtd);
         if (doc != null) {
             System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
             NodeList nList = doc.getElementsByTagName("student"); // сколько блоков Студент в файле
@@ -53,7 +57,7 @@ public class App {
                 // чтение <student firstname="St_FM1" lastname="St_LM1" groupnumber="1">
                 Element eElement = (Element) nNode;
                 System.out.println("student : " + eElement.getAttribute("firstname")
-                        +" "+eElement.getAttribute("lastname")+" "+eElement.getAttribute("groupnumber"));
+                        + " " + eElement.getAttribute("lastname") + " " + eElement.getAttribute("groupnumber"));
 
                 // сколько внутри узлов subject
                 int cntNodeSubject = eElement.getElementsByTagName("subject").getLength();
@@ -73,7 +77,7 @@ public class App {
                 double oldAerage = Double.parseDouble(cOldAverage);
                 double newAverage = new BigDecimal(nSumMark / cntNodeSubject).setScale(1, RoundingMode.HALF_UP).doubleValue();
 
-                if (oldAerage - newAverage !=0) {
+                if (oldAerage - newAverage != 0) {
                     System.out.printf("average : sum=%f, cnt=%d, avg=%.1f\n", nSumMark, cntNodeSubject, newAverage);
                     // запись
                     eElement.getElementsByTagName("average").item(0).setTextContent(String.format("%.1f", newAverage));
@@ -86,55 +90,85 @@ public class App {
 
     }
 
-    private static Document getXmlDoc(String cFile)  {
+    private static Document getXmlDoc(String cFileXml, final String cFileDtd) {
         Document doc = null;
-        try {
-            DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-            domFactory.setValidating(true);
-            DocumentBuilder builder = domFactory.newDocumentBuilder();
-            builder.setErrorHandler(new ErrorHandler() {
-                @Override
-                public void warning(SAXParseException e) throws SAXException {
-                    // do something more useful in each of these handlers
-                    //System.out.println("warning " + e.getMessage());
-                    //exception.printStackTrace();
-                    throw new SAXException("warning document builder", e);
+        while (true) {
+            try {
+                DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
+                domFactory.setValidating(true);
+                DocumentBuilder builder = domFactory.newDocumentBuilder();
+                builder.setErrorHandler(new ErrorHandler() {
+                    @Override
+                    public void warning(SAXParseException e) throws SAXException {
+                        // do something more useful in each of these handlers
+                        //System.out.println("warning " + e.getMessage());
+                        //exception.printStackTrace();
+                        throw new SAXException("warning document builder", e);
+                    }
+
+                    @Override
+                    public void error(SAXParseException e) throws SAXException {
+                        // do something more useful in each of these handlers
+                        //System.out.println("error " + e.getMessage());
+                        //e.printStackTrace();
+                        throw new SAXException("error builder " + e.getMessage(), e);
+                    }
+
+                    @Override
+                    public void fatalError(SAXParseException e) throws SAXException {
+                        // do something more useful in each of these handlers
+                        //System.out.println("fatalError " + e.getMessage());
+                        throw new SAXException("fatalError document builder", e);
+                    }
+
+                });
+                File fXmlFile = new File(cFileXml);
+
+                doc = builder.parse(fXmlFile);
+                doc.getDocumentElement().normalize();
+
+            } catch (SAXException e) {
+                /* нет DOCTYPE добавим*/
+                if ( e.getMessage().contains("must match DOCTYPE")) {
+                    cFileXml = addDOCTYPE(cFileXml, cFileDtd);
+                    continue;
+                } else {
+                    System.out.println(e.getMessage());
                 }
-
-                @Override
-                public void error(SAXParseException e) throws SAXException {
-                    // do something more useful in each of these handlers
-                    //System.out.println("error " + e.getMessage());
-                    //e.printStackTrace();
-                    throw new SAXException("error builder " + e.getMessage(), e);
-                }
-
-                @Override
-                public void fatalError(SAXParseException e) throws SAXException {
-                    // do something more useful in each of these handlers
-                    //System.out.println("fatalError " + e.getMessage());
-                    throw new SAXException("fatalError document builder", e);
-                }
-
-            });
-            File fXmlFile = new File(cFile);
-
-            doc = builder.parse(fXmlFile);
-            doc.getDocumentElement().normalize();
-
-        } catch (SAXException e) {
-            System.out.println( e.getMessage());
-            //e.printStackTrace();
-        } catch (ParserConfigurationException | IOException e) {
-            e.printStackTrace();
+                //e.printStackTrace();
+            } catch (ParserConfigurationException | IOException e) {
+                e.printStackTrace();
+            }
+            break;
         }
         //ParserConfigurationException
         return doc;
     }
 
     /**
-     *  // Функция для сохранения DOM в файл
+     * https://stackoverflow.com/questions/1096365/validate-an-xml-file-against-local-dtd-file-with-java
+     * @param cFileXml -
+     * @param cFileDtd -
+     * @return
+     */
+    private static String addDOCTYPE(String cFileXml, String cFileDtd) {
+        String cNewXmlFile = "tmp.xml";
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer transformer = null;
+        try {
+            transformer = tf.newTransformer();
+            transformer.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, cFileDtd);
+            transformer.transform(new StreamSource(cFileXml), new StreamResult(new FileOutputStream(cNewXmlFile))); //System.out
+        } catch (FileNotFoundException | TransformerException e) {
+            e.printStackTrace();
+        }
+        return cNewXmlFile;
+    }
+
+    /**
+     * // Функция для сохранения DOM в файл
      * https://java-course.ru/begin/xml/
+     *
      * @param document
      * @throws TransformerFactoryConfigurationError
      */
