@@ -4,12 +4,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.*;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.soap.SOAPPart;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -21,8 +22,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 /**
  * Hello world!
@@ -33,7 +32,6 @@ public class App {
         String cFileDtd = "group.dtd";
         String cFileSourece;
         String cFileTarget;
-
         if (args.length < 2) {
             cFileSourece = "stud.xml";
             cFileTarget = "nestud.xml";
@@ -42,11 +40,7 @@ public class App {
             cFileTarget = args[1];
         }
         //делать проверку на соответвие
-        if (!(Files.exists(Paths.get(cFileDtd)))) {
-            cFileDtd = "";
-        }
-
-        Document doc = getXmlDoc(cFileSourece, cFileDtd);
+        Document doc = getXmlDoc(cFileSourece);
         if (doc != null) {
             System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
             NodeList nList = doc.getElementsByTagName("student"); // сколько блоков Студент в файле
@@ -59,7 +53,7 @@ public class App {
                 // чтение <student firstname="St_FM1" lastname="St_LM1" groupnumber="1">
                 Element eElement = (Element) nNode;
                 System.out.println("student : " + eElement.getAttribute("firstname")
-                +" "+eElement.getAttribute("lastname")+" "+eElement.getAttribute("groupnumber"));
+                        +" "+eElement.getAttribute("lastname")+" "+eElement.getAttribute("groupnumber"));
 
                 // сколько внутри узлов subject
                 int cntNodeSubject = eElement.getElementsByTagName("subject").getLength();
@@ -92,52 +86,41 @@ public class App {
 
     }
 
-    private static Document getXmlDoc(String cFileXml, final String cFileDtd)  {
+    private static Document getXmlDoc(String cFile)  {
         Document doc = null;
         try {
-        DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-        domFactory.setValidating(true);
-            if (!(cFileDtd.isEmpty())) {
-                domFactory.setNamespaceAware(false);
-            }
-        DocumentBuilder builder = domFactory.newDocumentBuilder();
-        if (!(cFileDtd.isEmpty())) {
-            builder.setEntityResolver(new EntityResolver() {
+            DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
+            domFactory.setValidating(true);
+            DocumentBuilder builder = domFactory.newDocumentBuilder();
+            builder.setErrorHandler(new ErrorHandler() {
                 @Override
-                public InputSource resolveEntity(String publicId, String systemId) {
-                    return new InputSource(cFileDtd);
+                public void warning(SAXParseException e) throws SAXException {
+                    // do something more useful in each of these handlers
+                    //System.out.println("warning " + e.getMessage());
+                    //exception.printStackTrace();
+                    throw new SAXException("warning document builder", e);
                 }
+
+                @Override
+                public void error(SAXParseException e) throws SAXException {
+                    // do something more useful in each of these handlers
+                    //System.out.println("error " + e.getMessage());
+                    //e.printStackTrace();
+                    throw new SAXException("error builder " + e.getMessage(), e);
+                }
+
+                @Override
+                public void fatalError(SAXParseException e) throws SAXException {
+                    // do something more useful in each of these handlers
+                    //System.out.println("fatalError " + e.getMessage());
+                    throw new SAXException("fatalError document builder", e);
+                }
+
             });
-        }
-        builder.setErrorHandler(new ErrorHandler() {
-            @Override
-            public void warning(SAXParseException e) throws SAXException {
-                // do something more useful in each of these handlers
-                //System.out.println("warning " + e.getMessage());
-                //exception.printStackTrace();
-                throw new SAXException("warning document builder", e);
-            }
+            File fXmlFile = new File(cFile);
 
-            @Override
-            public void error(SAXParseException e) throws SAXException {
-                // do something more useful in each of these handlers
-                //System.out.println("error " + e.getMessage());
-               //e.printStackTrace();
-                throw new SAXException("error builder " + e.getMessage(), e);
-            }
-
-            @Override
-            public void fatalError(SAXParseException e) throws SAXException {
-                // do something more useful in each of these handlers
-                //System.out.println("fatalError " + e.getMessage());
-                throw new SAXException("fatalError document builder", e);
-            }
-
-        });
-        File fXmlFile = new File(cFileXml);
-
-        doc = builder.parse(fXmlFile);
-        doc.getDocumentElement().normalize();
+            doc = builder.parse(fXmlFile);
+            doc.getDocumentElement().normalize();
 
         } catch (SAXException e) {
             System.out.println( e.getMessage());
