@@ -95,7 +95,11 @@ public class App {
         while (true) {
             try {
                 DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-                domFactory.setValidating(true);
+                if (cFileDtd.isEmpty()) {
+                    domFactory.setValidating(false); //true
+                } else {
+                    domFactory.setValidating(true); //true
+                }
                 DocumentBuilder builder = domFactory.newDocumentBuilder();
                 builder.setErrorHandler(new ErrorHandler() {
                     @Override
@@ -122,8 +126,8 @@ public class App {
                     }
 
                 });
-                File fXmlFile = new File(cFileXml);
 
+                File fXmlFile = new File(cFileXml);
                 doc = builder.parse(fXmlFile);
                 doc.getDocumentElement().normalize();
 
