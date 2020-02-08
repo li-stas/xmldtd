@@ -5,6 +5,7 @@
 		<subject title="subject2" mark="3"/>
 		<subject title="subject3" mark="5"/>
 		<average>5</average>
+		<!--<average01>5</average01>-->
 	</student>
 </group>
 		<!--<!DOCTYPE group SYSTEM "group.dtd">-->
